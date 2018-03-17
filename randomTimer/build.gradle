@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.eldarerathis.randomtimer"
-        minSdkVersion 8
+        minSdkVersion 14
         targetSdkVersion 21
     }
 
