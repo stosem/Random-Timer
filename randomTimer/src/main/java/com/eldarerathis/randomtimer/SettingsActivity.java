@@ -40,7 +40,7 @@ import android.provider.MediaStore;
 import android.webkit.WebView;
 
 @SuppressWarnings("deprecation")
-public class SettingsActivity extends PreferenceActivity 
+public class SettingsActivity extends PreferenceActivity
 implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPreferenceClickListener
 {
 	@Override
@@ -107,12 +107,12 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 		else if (key.equals("pref_key_about"))
 		{
 			Preference p = findPreference(key);
-			try 
+			try
 			{
 				String version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
 				p.setSummary("Version " + version);
-			} 
-			catch (NameNotFoundException e) 
+			}
+			catch (NameNotFoundException e)
 			{
 				// Shouldn't happen?
 				e.printStackTrace();
@@ -121,20 +121,21 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 	}
 
 	@Override
-	public boolean onPreferenceClick(Preference preference) 
+	public boolean onPreferenceClick(Preference preference)
 	{
 		if (preference.getKey().equals("pref_key_licenses"))
 		{
 			WebView wv = new WebView(this);
 			wv.loadUrl("file:///android_asset/licenses.html");
 
+
 			new AlertDialog.Builder(this)
 			.setTitle("Open Source Licenses")
 			.setView(wv)
-			.setNegativeButton("Close", new DialogInterface.OnClickListener() 
+			.setNegativeButton("Close", new DialogInterface.OnClickListener()
 			{
 				@Override
-				public void onClick(DialogInterface dialog, int id) 
+				public void onClick(DialogInterface dialog, int id)
 				{
 					dialog.dismiss();
 				}
@@ -166,19 +167,27 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 		}
 		else if (uri.getScheme().equals("content"))
 		{
+
 			Cursor c = null;
 
 			try
 			{
-				String[] projection = { MediaStore.Audio.Media.TITLE  };
-				c = this.getContentResolver().query(uri, projection, null, null, null);
+				String[] projection = {
+						MediaStore.Audio.Media.TITLE
+				};
+				// XXX: TODO: change 1 arg to uri !
+				c = this.getContentResolver().query( /*uri*/ MediaStore.Audio.Media.INTERNAL_CONTENT_URI, projection, null, null, null);
+
+
 
 				if (c != null && c.getCount() > 0)
 				{
-					int columnIndex = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);
+					int columnIndex = c.getColumnIndexOrThrow( android.provider.MediaStore.Audio.Media.TITLE );
 					c.moveToFirst();
 					ringtoneName = c.getString(columnIndex);
 				}
+
+
 			}
 			catch (SQLiteException ex)
 			{
@@ -192,13 +201,15 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 				if (c != null)
 					c.close();
 			}
+
+
 		}
 
 		pref.setSummary(ringtoneName);
 	}
 
 	@Override
-	public void onSharedPreferenceChanged(SharedPreferences prefs, String key) 
+	public void onSharedPreferenceChanged(SharedPreferences prefs, String key)
 	{
 		updateSummary(key);
 
@@ -207,7 +218,7 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 	}
 
 	@Override
-	public boolean onPreferenceChange(Preference preference, Object newValue) 
+	public boolean onPreferenceChange(Preference preference, Object newValue)
 	{
 		if (preference instanceof DialogPreference)
 		{
@@ -218,12 +229,12 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 
 				if (maxValue < Integer.parseInt(newValue.toString()))
 				{
-					showInvalidAlert("Invalid Minimum", "Minimum time cannot be greater than maximum time.");
+					showInvalidAlert(getString(R.string.set_invalid_minimum), getString(R.string.set_minimum_cant_max));
 					return false;
 				}
 				else if (Integer.parseInt(newValue.toString()) < 1)
 				{
-					showInvalidAlert("Invalid Value", "Time cannot be less than 1 second.");
+					showInvalidAlert(getString(R.string.set_invalid_value), getString(R.string.set_time_less_1));
 					return false;
 				}
 			}
@@ -234,12 +245,12 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 
 				if (minValue > Integer.parseInt(newValue.toString()))
 				{
-					showInvalidAlert("Invalid Maximum", "Maximum time cannot be less than maximum time.");
+					showInvalidAlert(getString(R.string.set_invalid_maximum), getString(R.string.set_max_cant_min));
 					return false;
 				}
 				else if (Integer.parseInt(newValue.toString()) < 1)
 				{
-					showInvalidAlert("Invalid Value", "Time cannot be less than 1 second");
+					showInvalidAlert(getString(R.string.set_invalid_value), getString(R.string.set_time_less_1));
 					return false;
 				}
 			}
@@ -276,14 +287,14 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 		int seconds = totalSeconds %60;
 
 		if (hours > 0)
-			output += String.valueOf(hours) + (hours > 1 ? " hours" : " hour");
+			output += String.valueOf(hours) + (hours > 1 ? getString(R.string.hours_small) : getString(R.string.hour_small));
 
 		if (minutes > 0)
 		{
 			if (output.length() > 0)
 				output += ", ";
 
-			output += String.valueOf(minutes) + (minutes > 1 ? " minutes" : " minute");
+			output += String.valueOf(minutes) + (minutes > 1 ? getString(R.string.minutes_small) : getString(R.string.minute_small));
 		}
 
 		if (seconds > 0 || output.length() == 0)
@@ -291,7 +302,7 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 			if (output.length() > 0)
 				output += ", ";
 
-			output += String.valueOf(seconds) + (seconds > 1 || seconds == 0 ? " seconds" : " second");
+			output += String.valueOf(seconds) + (seconds > 1 || seconds == 0 ? getString(R.string.seconds_small) : getString(R.string.second_small));
 		}
 
 		return output;
@@ -302,10 +313,10 @@ implements OnPreferenceChangeListener, OnSharedPreferenceChangeListener, OnPrefe
 		new AlertDialog.Builder(this)
 		.setTitle(title)
 		.setMessage(message)
-		.setPositiveButton("Okay", new DialogInterface.OnClickListener() 
+		.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener()
 		{
 			@Override
-			public void onClick(DialogInterface arg0, int arg1) 
+			public void onClick(DialogInterface arg0, int arg1)
 			{
 				arg0.dismiss();
 			}

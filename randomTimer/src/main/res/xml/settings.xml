@@ -39,6 +39,25 @@
 
   </PreferenceCategory>
 
+  <PreferenceCategory
+        android:title="@string/pref_category_wakeup">
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="pref_key_wakeup"
+            android:summary="@string/pref_wakeup_summary"
+            android:title="@string/pref_title_wakeup" />
+
+  </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_category_notification">
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="pref_key_notification"
+            android:summary="@string/pref_notification_summary"
+            android:title="@string/pref_title_notification" />
+    </PreferenceCategory>
+
   <PreferenceCategory android:title="@string/pref_category_time">
 
     <com.eldarerathis.randomtimer.TimeEntryDialog

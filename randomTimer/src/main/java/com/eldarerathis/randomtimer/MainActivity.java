@@ -42,6 +42,14 @@ import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.graphics.Color;
+
+
 
 public class MainActivity extends ActionBarActivity 
 {
@@ -53,6 +61,8 @@ public class MainActivity extends ActionBarActivity
 	private static Ringtone _sfx;
 	private static Vibrator _vibrator;
 	private SharedPreferences _prefs;
+	private PowerManager pm;
+	private WakeLock wakeLock;
 
 	private String _startText;
 	private String _stopText;
@@ -75,6 +85,7 @@ public class MainActivity extends ActionBarActivity
 		_runningText = getResources().getString(R.string.running_text);
 		_timeUpText = getResources().getString(R.string.time_up_text);
 
+		pm = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 	}
 
@@ -129,7 +140,7 @@ public class MainActivity extends ActionBarActivity
 	public void onDestroy()
 	{
 		super.onDestroy();
-
+		if ( wakeLock != null && wakeLock.isHeld() ) wakeLock.release();
 		if (_timer != null)
 			_timer.cancel();
 	}
@@ -143,7 +154,7 @@ public class MainActivity extends ActionBarActivity
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
-		if (item.getTitle().toString().equals("Settings"))
+		if (item.getItemId() == R.id.action_settings)
 		{
 			startActivityForResult(new Intent("com.eldarerathis.randomtimer.intent.action.OPEN_SETTINGS"), 0);
 		}
@@ -199,11 +210,12 @@ public class MainActivity extends ActionBarActivity
 			final TextView textRunning = (TextView)findViewById(R.id.txtRunning);
 			final ImageView imgView = (ImageView)findViewById(R.id.imgRunning);
 
+			if ( wakeLock != null && wakeLock.isHeld() ) wakeLock.release();
 			_timer.cancel();
 			_timer = null;
 
 			startButton.setText(_startText);
-			startButton.setBootstrapType("success");
+			//startButton.setBootstrapType("success");
 
 			Drawable yellowRing = getResources().getDrawable(R.drawable.yellow_ring);
 			imgView.setImageDrawable(yellowRing);
@@ -221,7 +233,7 @@ public class MainActivity extends ActionBarActivity
 		final ImageView imgView = (ImageView)findViewById(R.id.imgRunning);
 
 		startButton.setText(_stopText);
-		startButton.setBootstrapType("danger");
+		//startButton.setBootstrapType("danger");
 
 		Drawable greenRing = getResources().getDrawable(R.drawable.green_ring);
 		imgView.setImageDrawable(greenRing);
@@ -233,6 +245,8 @@ public class MainActivity extends ActionBarActivity
 		int maxTime = Integer.parseInt(_prefs.getString("pref_key_max_time", "60"));
 		int time = _rand.nextInt((maxTime - minTime) + 1) + minTime;
 
+		wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TAG");
+		wakeLock.acquire();
 		_timer = new CountDownTimer(time * 1000 /* milliseconds */, Integer.MAX_VALUE)
 		{
 			@Override
@@ -247,8 +261,15 @@ public class MainActivity extends ActionBarActivity
 				{
 					_running = false;
 					_timer = null;
+					if ( wakeLock != null && wakeLock.isHeld() ) wakeLock.release();
 					startButton.setText(_startText);
-					startButton.setBootstrapType("success");
+					//startButton.setBootstrapType("success");
+				}
+
+				if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean("pref_key_wakeup", false)) {
+					if ( wakeLock != null && wakeLock.isHeld() ) wakeLock.release();
+					wakeLock = pm.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP|PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "TAG");
+					wakeLock.acquire();
 				}
 
 				if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean("pref_key_sound", false))
@@ -256,6 +277,11 @@ public class MainActivity extends ActionBarActivity
 
 				if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean("pref_key_vibrate",  false))
 					vibrate();
+
+				if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean("pref_key_notification",  false))
+					notification();
+
+				if ( wakeLock != null ) wakeLock.release();
 
 				if (repeat)
 				{
@@ -291,10 +317,7 @@ public class MainActivity extends ActionBarActivity
 			}
 
 			@Override
-			public void onTick(long arg0) 
-			{
-				return;
-			}
+			public void onTick(long arg0) { return; }
 		}.start();
 	}
 
@@ -329,4 +352,24 @@ public class MainActivity extends ActionBarActivity
 		long[] pattern = new long[] { 0, 1250, 0 };
 		_vibrator.vibrate(pattern, -1);
 	}
+
+	private void notification()
+	{
+		// Make reaction
+		Intent intent = new Intent(this, MainActivity.class);
+		PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, 0);
+		// Build notification
+		Notification noti = new Notification.Builder(this)
+				.setContentTitle(_timeUpText)
+				.setContentText(getResources().getString(R.string.app_name)).setSmallIcon(R.drawable.ic_launcher)
+				.setContentIntent(pIntent).build();
+		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		// hide the notification after its selected
+		noti.flags = Notification.FLAG_AUTO_CANCEL | Notification.FLAG_SHOW_LIGHTS ;
+		noti.ledARGB = Color.WHITE;
+		noti.ledOnMS = 100;
+		noti.ledOffMS = 100;
+		notificationManager.notify(0, noti);
+	}
+
 }

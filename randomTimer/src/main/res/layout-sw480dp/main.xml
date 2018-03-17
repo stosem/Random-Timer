@@ -34,9 +34,7 @@
         android:padding="10dp"
         android:layout_gravity="center_horizontal"
         android:visibility="invisible"
-        bootstrap:bb_type="primary"
-        bootstrap:bb_text_gravity="center"
-        bootstrap:bb_roundedCorners="true" />
+     />
     <com.beardedhen.androidbootstrap.BootstrapButton
         android:id="@+id/btnStart"
         android:layout_width="fill_parent"
@@ -47,7 +45,5 @@
         android:layout_gravity="center_horizontal"
         android:text="@string/start_text"
         android:onClick="btnStartClick"
-        bootstrap:bb_type="success"
-        bootstrap:bb_text_gravity="center"
-        bootstrap:bb_roundedCorners="true" />
+   />
 </LinearLayout>
